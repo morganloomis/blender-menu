@@ -36,7 +36,7 @@ def _make_menu_class(node: FolderNode, name_prefix: str, counter: list[int]) -> 
     counter[0] += 1
     bl_idname = f"BLENDERMENU_MT_script_{name_prefix}_{counter[0]}"
     menu_class = type(
-        "BLENDERMENU_MT_script_dyn",
+        bl_idname,
         (bpy.types.Menu,),
         {
             "bl_idname": bl_idname,
@@ -47,8 +47,20 @@ def _make_menu_class(node: FolderNode, name_prefix: str, counter: list[int]) -> 
     return (menu_class, all_descendant + child_menu_classes + [menu_class])
 
 
+def _unregister_stale_menu_classes() -> None:
+    """Remove dynamic menu classes left registered from a prior register() call."""
+    for cls in reversed(bpy.types.Menu.__subclasses__()):
+        if cls.__name__.startswith("BLENDERMENU_MT_script_"):
+            try:
+                bpy.utils.unregister_class(cls)
+            except RuntimeError:
+                pass
+
+
 def register_ui():
     """Register script menus from preferences script root; no menus if path invalid or empty."""
+    unregister_ui()
+    _unregister_stale_menu_classes()
     prefs = preferences.get_preferences()
     script_root = (prefs.script_root or "") if prefs else ""
     tree = build_script_tree(script_root)
@@ -58,6 +70,11 @@ def register_ui():
     counter = [0]
     root_class, all_classes = _make_menu_class(tree, "0", counter)
     for cls in all_classes:
+        if hasattr(bpy.types, cls.__name__):
+            try:
+                bpy.utils.unregister_class(getattr(bpy.types, cls.__name__))
+            except RuntimeError:
+                pass
         bpy.utils.register_class(cls)
         _registered_menu_classes.append(cls)
     global _root_menu_idname, _editor_menus_draw

@@ -45,4 +45,7 @@ def register():
 
 
 def unregister():
-    bpy.utils.unregister_class(BLENDERMENU_OT_run_script)
+    try:
+        bpy.utils.unregister_class(BLENDERMENU_OT_run_script)
+    except RuntimeError:
+        pass

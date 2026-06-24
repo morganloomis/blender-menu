@@ -1,8 +1,10 @@
-# blenderMenu add-on
+# Blender Tree Menus add-on
 # This module is the add-on entry point. bl_info and register/unregister live here only.
 
+ADDON_MODULE = "blender_menu"
+
 bl_info = {
-    "name": "blenderMenu",
+    "name": "Blender Tree Menus",
     "author": "",
     "version": (1, 0, 0),
     "blender": (5, 0, 0),
@@ -22,6 +24,7 @@ from . import ui
 
 def register():
     # Order: register preferences first, then operators, then UI (menus).
+    unregister()
     preferences.register()
     operators.register()
     ui.register_ui()
