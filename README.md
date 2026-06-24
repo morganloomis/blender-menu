@@ -7,13 +7,14 @@ Blender add-on that turns a folder on disk into menus in the 3D Viewport. Put Py
 After GitHub Pages is enabled (see below), install or update the add-on from Blender’s extension system:
 
 1. Open **Edit → Preferences → Get Extensions → Repositories**.
-2. Click **Add Remote Repository** and paste the site root URL (not the raw `index.json` path):
+2. Click **Add Remote Repository** and paste the **full** repository URL (include the repo name — not your personal `github.io` site root):
 
-   `https://<username>.github.io/blender-menu/`
+   `https://morganloomis.github.io/blender-menu/index.json`
 
-   Replace `<username>` with the GitHub account or organization that hosts this repository.
+   If you already added `https://morganloomis.github.io/` by mistake, remove it and use the URL above. That personal site is a separate GitHub Pages project and has no extension index.
 
-3. Refresh the repository list, then install **blenderMenu** from the catalog.
+3. In **Edit → Preferences → System → Network**, ensure **Allow Online Access** is enabled.
+4. Open the **Repositories** menu (▼) → **Refresh Remote**, then install **blenderMenu** from the catalog.
 
 ### One-time GitHub Pages setup
 

@@ -8,7 +8,6 @@ import json
 import tomllib
 import zipfile
 from pathlib import Path
-from urllib.parse import urlencode
 
 INDEX_FIELDS = (
     "id",
@@ -81,15 +80,9 @@ def sha256_file(path: Path) -> tuple[int, str]:
     return size, f"sha256:{digest.hexdigest()}"
 
 
-def build_archive_url(base_url: str, zip_name: str, blender_version_min: str) -> str:
-    base = base_url.rstrip("/")
-    query = urlencode(
-        {
-            "repository": "./index.json",
-            "blender_version_min": blender_version_min,
-        }
-    )
-    return f"{base}/{zip_name}?{query}"
+def build_archive_url(zip_name: str) -> str:
+    # Match Blender's server-generate output: relative path beside index.json.
+    return f"./{zip_name}"
 
 
 def build_index_entry(manifest: dict, archive_size: int, archive_hash: str, archive_url: str) -> dict:
@@ -110,7 +103,7 @@ def main() -> None:
     parser.add_argument(
         "--pages-base-url",
         required=True,
-        help="GitHub Pages base URL with trailing slash",
+        help="GitHub Pages base URL (kept for CI compatibility; archive URLs are relative)",
     )
     args = parser.parse_args()
 
@@ -134,7 +127,7 @@ def main() -> None:
             archive.write(file_path, file_path.relative_to(repo_root).as_posix())
 
     archive_size, archive_hash = sha256_file(zip_path)
-    archive_url = build_archive_url(args.pages_base_url, zip_name, manifest["blender_version_min"])
+    archive_url = build_archive_url(zip_name)
 
     index = {
         "version": "v1",

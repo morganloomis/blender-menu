@@ -1,5 +1,5 @@
 schema_version = "1.0.0"
-id = "blender-menu"
+id = "blender_menu"
 name = "blenderMenu"
 tagline = "Script menus from a folder with menu items for scripts that define main()"
 version = "1.0.0"
