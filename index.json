@@ -1,0 +1,27 @@
+{
+    "version": "v1",
+    "blocklist": [],
+    "data": [
+        {
+            "id": "blender-menu",
+            "name": "blenderMenu",
+            "tagline": "Script menus from a folder with menu items for scripts that define main()",
+            "version": "1.0.0",
+            "type": "add-on",
+            "blender_version_min": "5.0.0",
+            "maintainer": "Morgan Loomis <morganloomis@gmail.com>",
+            "tags": [
+                "Interface",
+                "Menu",
+                "UI"
+            ],
+            "license": [
+                "SPDX:GPL-2.0-or-later"
+            ],
+            "schema_version": "1.0.0",
+            "archive_size": 6934,
+            "archive_hash": "sha256:a012a718593760b7a81651bd0355b22a8a3616af6f30d5a0035e420edcc5d0eb",
+            "archive_url": "https://morganloomis.github.io/blender-menu/blender-menu-1.0.0.zip?repository=.%2Findex.json&blender_version_min=5.0.0"
+        }
+    ]
+}
