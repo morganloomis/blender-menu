@@ -5,3 +5,6 @@
 openspec/
 
 *.code-workspace
+
+# Build output
+dist/

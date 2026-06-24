@@ -2,6 +2,29 @@
 
 Blender add-on that turns a folder on disk into menus in the 3D Viewport. Put Python scripts in that folder (and subfolders); any script that defines `main()` becomes a menu item. Click to run it.
 
+## Install from extension repository
+
+After GitHub Pages is enabled (see below), install or update the add-on from Blender’s extension system:
+
+1. Open **Edit → Preferences → Get Extensions → Repositories**.
+2. Click **Add Remote Repository** and paste the site root URL (not the raw `index.json` path):
+
+   `https://<username>.github.io/blender-menu/`
+
+   Replace `<username>` with the GitHub account or organization that hosts this repository.
+
+3. Refresh the repository list, then install **blenderMenu** from the catalog.
+
+### One-time GitHub Pages setup
+
+1. Push this repository to GitHub (the release workflow runs on push to `main`).
+2. In the repository on GitHub: **Settings → Pages**.
+3. Under **Build and deployment**, set **Source** to **Deploy from a branch**.
+4. Choose branch **`gh-pages`**, folder **`/ (root)`**, and save.
+5. After the first successful release workflow, confirm the site serves `index.json` and the versioned zip at the root URL above.
+
+---
+
 **Workflow (using the add-on):**
 
 1. **Set the script root**  

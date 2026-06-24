@@ -1,0 +1,23 @@
+schema_version = "1.0.0"
+id = "blender-menu"
+name = "blenderMenu"
+tagline = "Script menus from a folder with menu items for scripts that define main()"
+version = "1.0.0"
+type = "add-on"
+blender_version_min = "5.0.0"
+maintainer = "Morgan Loomis <morganloomis@gmail.com>"
+license = ["SPDX:GPL-2.0-or-later"]
+tags = ["Interface", "Menu", "UI"]
+
+[build]
+paths_exclude_pattern = [
+    "__pycache__/",
+    ".git",
+    "*.zip",
+    ".github/",
+    "openspec/",
+    ".cursor/",
+    "dist/",
+    "build_index.py",
+    "*.code-workspace",
+]
