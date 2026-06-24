@@ -4,8 +4,8 @@
     "data": [
         {
             "id": "blender_menu",
-            "name": "blenderMenu",
-            "tagline": "Script menus from a folder with menu items for scripts that define main()",
+            "name": "Blender Tree Menus",
+            "tagline": "Folder-based tree menus in the 3D Viewport; scripts with main() become menu items",
             "version": "1.0.0",
             "type": "add-on",
             "blender_version_min": "5.0.0",
@@ -19,8 +19,8 @@
                 "SPDX:GPL-2.0-or-later"
             ],
             "schema_version": "1.0.0",
-            "archive_size": 7051,
-            "archive_hash": "sha256:c6a7c56fb533a0dd7dd3cb9915fbfc8525926d5daa911bc3afb2694d20825eb3",
+            "archive_size": 6438,
+            "archive_hash": "sha256:9c0ba0406d6a8603ab4091f9b33402c07342a3ec9633301714529c8d736301e5",
             "archive_url": "./blender_menu-1.0.0.zip"
         }
     ]
