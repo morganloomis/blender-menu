@@ -21,8 +21,9 @@ Install or update the add-on from Blender’s extension system:
    Use a path outside the add-on so your scripts survive add-on updates.
 
 2. **Add folders and scripts**  
-   - **Top-level folders** under the script root become **header menus** in the 3D Viewport (menu label = folder name). **Subfolders** become submenus (sorted alphabetically).  
-   - **Python files** (`.py`) that define a `main()` function become menu items; scripts without `main()` are ignored.  
+   - **Top-level folders** under the script root become **header menus** in the 3D Viewport. **Subfolders** become submenus (sorted alphabetically by folder name on disk).  
+   - **Menu labels** are formatted for display: camelCase and snake_case names become separate capitalized words (e.g. `rigControls` → **Rig Controls**, `export_fbx` → **Export Fbx**). Sort order still follows the raw on-disk names.  
+   - **Python files** (`.py`) that define a `main()` function become menu items; scripts without `main()` are ignored. Script labels use the same formatting (from the filename without `.py`).  
    - Scripts placed directly under the script root (not in a subfolder) appear under a header menu labeled **Scripts**.
 
 3. **Run a script**  

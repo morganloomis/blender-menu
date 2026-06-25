@@ -7,6 +7,7 @@ from bpy.app.handlers import persistent
 
 from . import preferences
 from .discovery import FolderNode, ScriptItem, build_script_tree, tree_has_menus
+from .labels import format_menu_label
 from .operators import BLENDERMENU_OT_run_script
 
 # Dynamic menu classes created at registration; unregistered in reverse order.
@@ -89,17 +90,21 @@ def _make_menu_class(
     for subname, child_node in node.subfolders:
         counter[0] += 1
         child_classes_and_lists.append(
-            _make_menu_class(child_node, subname, f"{name_prefix}_{counter[0]}", counter)
+            _make_menu_class(
+                child_node,
+                format_menu_label(subname),
+                f"{name_prefix}_{counter[0]}",
+                counter,
+            )
         )
 
     child_menu_classes = [item[0] for item in child_classes_and_lists]
-    child_names = [name for name, _ in node.subfolders]
     all_descendant = [cls for _, reg in child_classes_and_lists for cls in reg]
 
     def draw_menu(self, context):
         layout = self.layout
-        for name, child_class in zip(child_names, child_menu_classes):
-            layout.menu(child_class.bl_idname, text=name)
+        for child_class in child_menu_classes:
+            layout.menu(child_class.bl_idname, text=child_class.bl_label)
         for item in node.scripts:
             op = layout.operator(BLENDERMENU_OT_run_script.bl_idname, text=item.label)
             op.script_path = item.path
@@ -214,7 +219,12 @@ def build_menus() -> int:
     header_menu_count = 0
 
     for folder_name, child_node in tree.subfolders:
-        menu_class, all_classes = _make_menu_class(child_node, folder_name, folder_name, counter)
+        menu_class, all_classes = _make_menu_class(
+            child_node,
+            format_menu_label(folder_name),
+            folder_name,
+            counter,
+        )
         for cls in all_classes:
             _register_menu_class(cls)
         _append_header_menu(menu_class.bl_idname)

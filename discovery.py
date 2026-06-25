@@ -5,6 +5,8 @@ import ast
 import os
 from dataclasses import dataclass, field
 
+from .labels import format_menu_label
+
 
 @dataclass
 class ScriptItem:
@@ -61,8 +63,8 @@ def _scan_folder(dir_path: str) -> FolderNode:
             except OSError:
                 continue
             if _has_main(source):
-                label = os.path.splitext(entry.name)[0]
-                node.scripts.append(ScriptItem(label=label, path=entry.path))
+                stem = os.path.splitext(entry.name)[0]
+                node.scripts.append(ScriptItem(label=format_menu_label(stem), path=entry.path))
     return node
 
 
