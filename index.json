@@ -19,8 +19,8 @@
                 "SPDX:GPL-2.0-or-later"
             ],
             "schema_version": "1.0.0",
-            "archive_size": 8487,
-            "archive_hash": "sha256:cc96216007d8a8c0891847e91b4012978cb04c6690face37d0c512518c11b2fc",
+            "archive_size": 10045,
+            "archive_hash": "sha256:e1b225b3c4c942593ce8972e20ebfc5e0397660e2c8b45aeca3acf40a726d4ea",
             "archive_url": "./blender_menu-1.0.0.zip"
         }
     ]
