@@ -28,6 +28,10 @@ labels = _load_addon_module("labels")
 discovery = _load_addon_module("discovery")
 format_menu_label = labels.format_menu_label
 build_script_tree = discovery.build_script_tree
+merge_folder_nodes = discovery.merge_folder_nodes
+build_merged_script_tree = discovery.build_merged_script_tree
+FolderNode = discovery.FolderNode
+ScriptItem = discovery.ScriptItem
 
 
 class TestFormatMenuLabel(unittest.TestCase):
@@ -71,6 +75,99 @@ class TestDiscoveryLabels(unittest.TestCase):
             tree = build_script_tree(root)
             names = [name for name, _ in tree.subfolders]
             self.assertEqual(names, ["alpha_folder", "zebraFolder"])
+
+
+def _write_main_script(path: str) -> None:
+    with open(path, "w", encoding="utf-8") as f:
+        f.write("def main():\n    pass\n")
+
+
+class TestMergeFolderNodes(unittest.TestCase):
+    def test_merge_subfolders_with_same_name(self):
+        tools_a = FolderNode()
+        tools_a.scripts.append(ScriptItem(label="Alpha", path="/a/tools/alpha.py"))
+        node_a = FolderNode(subfolders=[("tools", tools_a)])
+
+        tools_b = FolderNode()
+        tools_b.scripts.append(ScriptItem(label="Beta", path="/b/tools/beta.py"))
+        node_b = FolderNode(subfolders=[("tools", tools_b)])
+
+        merged = merge_folder_nodes([node_a, node_b])
+        self.assertEqual(len(merged.subfolders), 1)
+        name, child = merged.subfolders[0]
+        self.assertEqual(name, "tools")
+        labels = [s.label for s in child.scripts]
+        self.assertEqual(labels, ["Alpha", "Beta"])
+
+    def test_later_path_wins_same_script_label(self):
+        tools_a = FolderNode()
+        tools_a.scripts.append(ScriptItem(label="Export", path="/official/tools/export.py"))
+        node_a = FolderNode(subfolders=[("tools", tools_a)])
+
+        tools_b = FolderNode()
+        tools_b.scripts.append(ScriptItem(label="Export", path="/personal/tools/export.py"))
+        node_b = FolderNode(subfolders=[("tools", tools_b)])
+
+        merged = merge_folder_nodes([node_a, node_b])
+        child = merged.subfolders[0][1]
+        self.assertEqual(len(child.scripts), 1)
+        self.assertEqual(child.scripts[0].path, "/personal/tools/export.py")
+
+    def test_root_level_scripts_merged(self):
+        node_a = FolderNode(scripts=[ScriptItem(label="One", path="/a/one.py")])
+        node_b = FolderNode(scripts=[ScriptItem(label="Two", path="/b/two.py")])
+
+        merged = merge_folder_nodes([node_a, node_b])
+        labels = [s.label for s in merged.scripts]
+        self.assertEqual(labels, ["One", "Two"])
+
+    def test_post_merge_sort_order(self):
+        node_a = FolderNode(
+            scripts=[
+                ScriptItem(label="Zebra", path="/a/zebra.py"),
+                ScriptItem(label="Alpha", path="/a/alpha.py"),
+            ]
+        )
+        merged = merge_folder_nodes([node_a])
+        labels = [s.label for s in merged.scripts]
+        self.assertEqual(labels, ["Alpha", "Zebra"])
+
+
+class TestBuildMergedScriptTree(unittest.TestCase):
+    def test_valid_multi_path_merge(self):
+        with tempfile.TemporaryDirectory() as root_a, tempfile.TemporaryDirectory() as root_b:
+            os.makedirs(os.path.join(root_a, "rigging"))
+            _write_main_script(os.path.join(root_a, "rigging", "pose.py"))
+            os.makedirs(os.path.join(root_b, "export"))
+            _write_main_script(os.path.join(root_b, "export", "fbx.py"))
+
+            tree, skipped = build_merged_script_tree([root_a, root_b])
+            self.assertEqual(skipped, [])
+            self.assertIsNotNone(tree)
+            names = [name for name, _ in tree.subfolders]
+            self.assertEqual(names, ["export", "rigging"])
+
+    def test_skipped_invalid_paths(self):
+        with tempfile.TemporaryDirectory() as valid_root:
+            _write_main_script(os.path.join(valid_root, "run.py"))
+
+            tree, skipped = build_merged_script_tree([valid_root, "/nonexistent/path"])
+            self.assertEqual(len(skipped), 1)
+            self.assertIsNotNone(tree)
+            self.assertEqual(len(tree.scripts), 1)
+
+    def test_all_invalid_returns_none(self):
+        tree, skipped = build_merged_script_tree(["/nonexistent/a", "/nonexistent/b"])
+        self.assertIsNone(tree)
+        self.assertEqual(len(skipped), 2)
+
+    def test_valid_paths_but_empty_tree(self):
+        with tempfile.TemporaryDirectory() as root_a, tempfile.TemporaryDirectory() as root_b:
+            tree, skipped = build_merged_script_tree([root_a, root_b])
+            self.assertEqual(skipped, [])
+            self.assertIsNotNone(tree)
+            self.assertEqual(tree.subfolders, [])
+            self.assertEqual(tree.scripts, [])
 
 
 if __name__ == "__main__":

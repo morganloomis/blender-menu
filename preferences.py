@@ -9,26 +9,48 @@ import bpy
 _ADDON_MODULE = __package__
 
 
-def _on_script_root_updated(self, context):
+def _schedule_menu_rebuild():
     from . import ui
 
     ui.schedule_rebuild()
 
 
+def _on_script_path_updated(self, context):
+    _schedule_menu_rebuild()
+
+
+class BLENDERMENU_script_path(bpy.types.PropertyGroup):
+    path: bpy.props.StringProperty(
+        name="Script directory",
+        description="Folder to scan for scripts",
+        default="",
+        subtype="DIR_PATH",
+        update=_on_script_path_updated,
+    )
+
+
+class BLENDERMENU_UL_script_paths(bpy.types.UIList):
+    bl_idname = "BLENDERMENU_UL_script_paths"
+
+    def draw_item(
+        self,
+        context,
+        layout,
+        data,
+        item,
+        icon,
+        active_data,
+        active_propname,
+        index,
+    ):
+        layout.prop(item, "path", text="")
+
+
 class BLENDERMENU_preferences(bpy.types.AddonPreferences):
     bl_idname = _ADDON_MODULE
 
-    script_root: bpy.props.StringProperty(
-        name="Script root",
-        description=(
-            "Folder to scan for scripts. Each subfolder becomes a header menu; "
-            "each .py file with main() becomes a menu item. "
-            "Menus appear in the 3D Viewport header."
-        ),
-        default="",
-        subtype="DIR_PATH",
-        update=_on_script_root_updated,
-    )
+    script_paths: bpy.props.CollectionProperty(type=BLENDERMENU_script_path)
+    script_paths_index: bpy.props.IntProperty(name="Active script path index", default=0)
 
     show_menu_build_log: bpy.props.BoolProperty(
         name="Show menu build log",
@@ -41,15 +63,30 @@ class BLENDERMENU_preferences(bpy.types.AddonPreferences):
 
         layout = self.layout
         box = layout.box()
-        box.label(text="Turn a folder on disk into script menus in the 3D Viewport.")
-        box.prop(self, "script_root")
+        box.label(text="Turn folders on disk into script menus in the 3D Viewport.")
+        row = box.row()
+        row.template_list(
+            "BLENDERMENU_UL_script_paths",
+            "",
+            self,
+            "script_paths",
+            self,
+            "script_paths_index",
+            rows=3,
+        )
+        col = row.column(align=True)
+        col.operator("blender_menu.script_path_add", icon="ADD", text="")
+        col.operator("blender_menu.script_path_remove", icon="REMOVE", text="")
         hint = box.column(align=True)
         hint.scale_y = 0.9
         hint.label(
             text="Top-level folders become header menus; scripts with main() become items.",
             icon="INFO",
         )
-        hint.label(text="Use Refresh script menus after changing the path or folder contents.")
+        hint.label(
+            text="Paths are merged in list order; later entries override same-named scripts.",
+        )
+        hint.label(text="Use Refresh script menus after changing paths or folder contents.")
 
         status = ui.get_menu_build_state()
         status_box = layout.box()
@@ -63,6 +100,8 @@ class BLENDERMENU_preferences(bpy.types.AddonPreferences):
 
 
 def register():
+    bpy.utils.register_class(BLENDERMENU_script_path)
+    bpy.utils.register_class(BLENDERMENU_UL_script_paths)
     bpy.utils.register_class(BLENDERMENU_preferences)
 
 
@@ -91,21 +130,28 @@ def get_preferences():
     return prefs
 
 
-def get_script_root() -> tuple[str, str]:
-    """Return (resolved_path, lookup_source). Path is empty when unset."""
+def get_script_roots() -> tuple[list[str], str]:
+    """Return (resolved_paths, lookup_source). Paths are absolute; blank entries omitted."""
     prefs, source = _find_addon_preferences()
     if prefs is None:
-        return "", source
+        return [], source
 
-    raw = (prefs.script_root or "").strip()
-    if not raw:
-        return "", source
-
-    return os.path.abspath(os.path.expanduser(raw)), source
+    paths: list[str] = []
+    for item in prefs.script_paths:
+        raw = (item.path or "").strip()
+        if not raw:
+            continue
+        paths.append(os.path.abspath(os.path.expanduser(raw)))
+    return paths, source
 
 
 def unregister():
-    try:
-        bpy.utils.unregister_class(BLENDERMENU_preferences)
-    except RuntimeError:
-        pass
+    for cls in (
+        BLENDERMENU_preferences,
+        BLENDERMENU_UL_script_paths,
+        BLENDERMENU_script_path,
+    ):
+        try:
+            bpy.utils.unregister_class(cls)
+        except RuntimeError:
+            pass

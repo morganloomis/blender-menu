@@ -43,7 +43,7 @@ class BLENDERMENU_OT_run_script(bpy.types.Operator):
 class BLENDERMENU_OT_refresh_menus(bpy.types.Operator):
     bl_idname = "blender_menu.refresh_menus"
     bl_label = "Refresh script menus"
-    bl_description = "Rebuild script menus from the current script root"
+    bl_description = "Rebuild script menus from all configured script directories"
 
     def execute(self, context):
         from . import ui
@@ -57,13 +57,55 @@ class BLENDERMENU_OT_refresh_menus(bpy.types.Operator):
         return {"FINISHED"}
 
 
+class BLENDERMENU_OT_script_path_add(bpy.types.Operator):
+    bl_idname = "blender_menu.script_path_add"
+    bl_label = "Add script directory"
+    bl_description = "Add a script directory to the list"
+
+    def execute(self, context):
+        from . import preferences, ui
+
+        prefs = preferences.get_preferences()
+        if prefs is None:
+            return {"CANCELLED"}
+        prefs.script_paths.add()
+        ui.schedule_rebuild()
+        return {"FINISHED"}
+
+
+class BLENDERMENU_OT_script_path_remove(bpy.types.Operator):
+    bl_idname = "blender_menu.script_path_remove"
+    bl_label = "Remove script directory"
+    bl_description = "Remove the selected script directory from the list"
+
+    def execute(self, context):
+        from . import preferences, ui
+
+        prefs = preferences.get_preferences()
+        if prefs is None or not prefs.script_paths:
+            return {"CANCELLED"}
+        index = prefs.script_paths_index
+        if index < 0 or index >= len(prefs.script_paths):
+            index = len(prefs.script_paths) - 1
+        prefs.script_paths.remove(index)
+        ui.schedule_rebuild()
+        return {"FINISHED"}
+
+
 def register():
     bpy.utils.register_class(BLENDERMENU_OT_run_script)
     bpy.utils.register_class(BLENDERMENU_OT_refresh_menus)
+    bpy.utils.register_class(BLENDERMENU_OT_script_path_add)
+    bpy.utils.register_class(BLENDERMENU_OT_script_path_remove)
 
 
 def unregister():
-    for cls in (BLENDERMENU_OT_refresh_menus, BLENDERMENU_OT_run_script):
+    for cls in (
+        BLENDERMENU_OT_script_path_remove,
+        BLENDERMENU_OT_script_path_add,
+        BLENDERMENU_OT_refresh_menus,
+        BLENDERMENU_OT_run_script,
+    ):
         try:
             bpy.utils.unregister_class(cls)
         except RuntimeError:

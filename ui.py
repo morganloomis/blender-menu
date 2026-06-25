@@ -1,12 +1,12 @@
 # UI registration hook: add menu/pie registration and unregistration here.
 # register_ui() is called from the main package register(); unregister_ui() from unregister().
-# Script menus are built from the script root preference and appear in the 3D Viewport header.
+# Script menus are built from configured script directories and appear in the 3D Viewport header.
 
 import bpy
 from bpy.app.handlers import persistent
 
 from . import preferences
-from .discovery import FolderNode, ScriptItem, build_script_tree, tree_has_menus
+from .discovery import FolderNode, ScriptItem, build_merged_script_tree, tree_has_menus
 from .labels import format_menu_label
 from .operators import BLENDERMENU_OT_run_script
 
@@ -27,7 +27,7 @@ REASON_EMPTY = "empty"
 
 _menu_build_state = {
     "reason": REASON_NO_PATH,
-    "message": "No menus: script root not set",
+    "message": "No menus: no script directories configured",
     "header_menu_count": 0,
 }
 
@@ -58,11 +58,12 @@ def _should_log_rebuild() -> bool:
 
 
 def _log_rebuild(
-    path: str,
+    paths: list[str],
     source: str,
     tree: FolderNode | None,
     header_menu_count: int,
     reason: str,
+    skipped: list[str],
 ) -> None:
     if not _should_log_rebuild():
         return
@@ -70,7 +71,8 @@ def _log_rebuild(
     script_count = _count_scripts(tree) if tree else 0
     print(
         "[Blender Tree Menus] rebuild:"
-        f" path={path!r}"
+        f" paths={paths!r}"
+        f" skipped={skipped!r}"
         f" source={source}"
         f" reason={reason}"
         f" subfolders={subfolder_count}"
@@ -128,7 +130,7 @@ def _make_root_scripts_menu(
     name_prefix: str,
     counter: list[int],
 ) -> tuple[type, list[type]]:
-    """Build a top-level menu for scripts directly under the script root."""
+    """Build a top-level menu for scripts directly under a script directory root."""
 
     def draw_menu(self, context):
         layout = self.layout
@@ -193,26 +195,33 @@ def _unregister_dynamic_menus() -> None:
 
 
 def build_menus() -> int:
-    """Build header menus from the current script root. Returns header menu count."""
-    raw_path, source = preferences.get_script_root()
+    """Build header menus from configured script directories. Returns header menu count."""
+    paths, source = preferences.get_script_roots()
 
-    if not raw_path:
-        message = "No menus: script root not set"
+    if not paths:
+        message = "No menus: no script directories configured"
         _set_menu_build_state(REASON_NO_PATH, message, 0)
-        _log_rebuild("", source, None, 0, REASON_NO_PATH)
+        _log_rebuild([], source, None, 0, REASON_NO_PATH, [])
         return 0
 
-    tree = build_script_tree(raw_path)
+    tree, skipped = build_merged_script_tree(paths)
+
     if tree is None:
-        message = f"No menus: path invalid ({raw_path})"
+        if skipped:
+            skipped_text = ", ".join(skipped)
+            message = f"No menus: all paths invalid ({skipped_text})"
+        else:
+            message = "No menus: no script directories configured"
         _set_menu_build_state(REASON_INVALID_PATH, message, 0)
-        _log_rebuild(raw_path, source, None, 0, REASON_INVALID_PATH)
+        _log_rebuild(paths, source, None, 0, REASON_INVALID_PATH, skipped)
         return 0
 
     if not tree_has_menus(tree):
-        message = f"No menus: no scripts with main() in {raw_path}"
+        message = "No menus: no scripts with main() in configured directories"
+        if skipped:
+            message += f" (skipped invalid: {', '.join(skipped)})"
         _set_menu_build_state(REASON_EMPTY, message, 0)
-        _log_rebuild(raw_path, source, tree, 0, REASON_EMPTY)
+        _log_rebuild(paths, source, tree, 0, REASON_EMPTY, skipped)
         return 0
 
     counter = [0]
@@ -237,14 +246,25 @@ def build_menus() -> int:
         _append_header_menu(scripts_menu.bl_idname)
         header_menu_count += 1
 
-    message = f"{header_menu_count} menu{'s' if header_menu_count != 1 else ''} registered from {raw_path}"
+    valid_count = len(paths) - len(skipped)
+    menu_word = "menu" if header_menu_count == 1 else "menus"
+    if skipped:
+        message = (
+            f"{header_menu_count} {menu_word} registered from {valid_count} path(s); "
+            f"skipped invalid: {', '.join(skipped)}"
+        )
+    elif valid_count > 1:
+        message = f"{header_menu_count} {menu_word} registered from {valid_count} paths"
+    else:
+        message = f"{header_menu_count} {menu_word} registered from {paths[0]}"
+
     _set_menu_build_state(REASON_OK, message, header_menu_count)
-    _log_rebuild(raw_path, source, tree, header_menu_count, REASON_OK)
+    _log_rebuild(paths, source, tree, header_menu_count, REASON_OK, skipped)
     return header_menu_count
 
 
 def rebuild_menus() -> int:
-    """Unregister prior dynamic menus and rebuild from the current script root."""
+    """Unregister prior dynamic menus and rebuild from configured script directories."""
     _unregister_dynamic_menus()
     return build_menus()
 

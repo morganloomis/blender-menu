@@ -80,3 +80,49 @@ def build_script_tree(root_path: str) -> FolderNode | None:
     if not os.path.isdir(path):
         return None
     return _scan_folder(path)
+
+
+def merge_folder_nodes(nodes: list[FolderNode]) -> FolderNode:
+    """Merge folder trees; later nodes override scripts with the same menu label."""
+    result = FolderNode()
+    if not nodes:
+        return result
+
+    subfolder_children: dict[str, list[FolderNode]] = {}
+    for node in nodes:
+        for name, child in node.subfolders:
+            subfolder_children.setdefault(name, []).append(child)
+
+    for name in sorted(subfolder_children.keys(), key=lambda n: n.lower()):
+        merged_child = merge_folder_nodes(subfolder_children[name])
+        result.subfolders.append((name, merged_child))
+
+    script_by_label: dict[str, ScriptItem] = {}
+    for node in nodes:
+        for script in node.scripts:
+            script_by_label[script.label] = script
+
+    result.scripts = sorted(script_by_label.values(), key=lambda s: s.label.lower())
+    return result
+
+
+def build_merged_script_tree(root_paths: list[str]) -> tuple[FolderNode | None, list[str]]:
+    """
+    Build a merged menu tree from multiple script root paths.
+    Returns (tree, skipped_paths) where skipped_paths lists invalid paths.
+    tree is None when no valid paths remain.
+    """
+    trees: list[FolderNode] = []
+    skipped: list[str] = []
+
+    for path in root_paths:
+        tree = build_script_tree(path)
+        if tree is None:
+            skipped.append(path)
+        else:
+            trees.append(tree)
+
+    if not trees:
+        return None, skipped
+
+    return merge_folder_nodes(trees), skipped
