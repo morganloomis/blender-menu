@@ -23,7 +23,7 @@ from . import ui
 
 
 def register():
-    # Order: register preferences first, then operators, then UI (menus).
+    # Order: register preferences first, then operators, then UI hooks (deferred menu build).
     unregister()
     preferences.register()
     operators.register()

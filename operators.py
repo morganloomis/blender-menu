@@ -40,12 +40,31 @@ class BLENDERMENU_OT_run_script(bpy.types.Operator):
         return {"FINISHED"}
 
 
+class BLENDERMENU_OT_refresh_menus(bpy.types.Operator):
+    bl_idname = "blender_menu.refresh_menus"
+    bl_label = "Refresh script menus"
+    bl_description = "Rebuild script menus from the current script root"
+
+    def execute(self, context):
+        from . import ui
+
+        count = ui.rebuild_menus()
+        state = ui.get_menu_build_state()
+        if count > 0:
+            self.report({"INFO"}, state["message"])
+        else:
+            self.report({"WARNING"}, state["message"])
+        return {"FINISHED"}
+
+
 def register():
     bpy.utils.register_class(BLENDERMENU_OT_run_script)
+    bpy.utils.register_class(BLENDERMENU_OT_refresh_menus)
 
 
 def unregister():
-    try:
-        bpy.utils.unregister_class(BLENDERMENU_OT_run_script)
-    except RuntimeError:
-        pass
+    for cls in (BLENDERMENU_OT_refresh_menus, BLENDERMENU_OT_run_script):
+        try:
+            bpy.utils.unregister_class(cls)
+        except RuntimeError:
+            pass

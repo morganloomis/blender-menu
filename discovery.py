@@ -20,6 +20,13 @@ class FolderNode:
     scripts: list[ScriptItem] = field(default_factory=list)
 
 
+def tree_has_menus(node: FolderNode) -> bool:
+    """Return True when the tree has subfolders or root-level scripts with main()."""
+    if node.subfolders:
+        return True
+    return bool(node.scripts)
+
+
 def _has_main(source: str) -> bool:
     """Return True if the Python source defines a function named main. Uses AST only."""
     try:
