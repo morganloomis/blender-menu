@@ -29,6 +29,7 @@ Install or update the add-on from Blender’s extension system:
    - **Top-level folders** under each script directory become **header menus** in the 3D Viewport. **Subfolders** become submenus (sorted alphabetically by folder name on disk).  
    - **Menu labels** are formatted for display: camelCase and snake_case names become separate capitalized words (e.g. `rigControls` → **Rig Controls**, `export_fbx` → **Export Fbx**). Sort order still follows the raw on-disk names.  
    - **Python files** (`.py`) that define a `main()` function become menu items; scripts without `main()` are ignored. Script labels use the same formatting (from the filename without `.py`).  
+   - **Ignored paths:** dot-prefixed names (e.g. `.hidden`), underscore-prefixed names (e.g. `_internal`), and `__pycache__` directories are skipped during discovery and never appear in menus.  
    - Scripts placed directly under a script directory root (not in a subfolder) appear under a header menu labeled **Scripts** (root-level scripts from all configured paths merge into one **Scripts** menu).
 
 4. **Run a script**  

@@ -29,6 +29,13 @@ def tree_has_menus(node: FolderNode) -> bool:
     return bool(node.scripts)
 
 
+def _should_skip_entry(name: str) -> bool:
+    """Return True for internal paths that must not appear in the menu tree."""
+    if name == "__pycache__":
+        return True
+    return name.startswith(".") or name.startswith("_")
+
+
 def _has_main(source: str) -> bool:
     """Return True if the Python source defines a function named main. Uses AST only."""
     try:
@@ -51,7 +58,7 @@ def _scan_folder(dir_path: str) -> FolderNode:
     except OSError:
         return node
     for entry in entries:
-        if entry.name.startswith("."):
+        if _should_skip_entry(entry.name):
             continue
         if entry.is_dir():
             child = _scan_folder(entry.path)

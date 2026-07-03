@@ -133,6 +133,63 @@ class TestMergeFolderNodes(unittest.TestCase):
         self.assertEqual(labels, ["Alpha", "Zebra"])
 
 
+class TestDiscoverySkipRules(unittest.TestCase):
+    def test_underscore_prefixed_folder_and_script_skipped(self):
+        with tempfile.TemporaryDirectory() as root:
+            os.makedirs(os.path.join(root, "_internal"))
+            _write_main_script(os.path.join(root, "_internal", "hidden.py"))
+            _write_main_script(os.path.join(root, "_private.py"))
+            os.makedirs(os.path.join(root, "tools"))
+            _write_main_script(os.path.join(root, "tools", "run.py"))
+
+            tree = build_script_tree(root)
+            names = [name for name, _ in tree.subfolders]
+            self.assertEqual(names, ["tools"])
+            self.assertEqual(tree.scripts, [])
+
+    def test_dot_prefixed_folder_and_script_skipped(self):
+        with tempfile.TemporaryDirectory() as root:
+            os.makedirs(os.path.join(root, ".hidden"))
+            _write_main_script(os.path.join(root, ".hidden", "secret.py"))
+            _write_main_script(os.path.join(root, ".secret.py"))
+            os.makedirs(os.path.join(root, "tools"))
+            _write_main_script(os.path.join(root, "tools", "run.py"))
+
+            tree = build_script_tree(root)
+            names = [name for name, _ in tree.subfolders]
+            self.assertEqual(names, ["tools"])
+            self.assertEqual(tree.scripts, [])
+
+    def test_pycache_directories_skipped(self):
+        with tempfile.TemporaryDirectory() as root:
+            os.makedirs(os.path.join(root, "__pycache__"))
+            _write_main_script(os.path.join(root, "__pycache__", "cached.py"))
+            os.makedirs(os.path.join(root, "tools", "__pycache__"))
+            _write_main_script(os.path.join(root, "tools", "__pycache__", "nested.py"))
+            _write_main_script(os.path.join(root, "tools", "run.py"))
+
+            tree = build_script_tree(root)
+            self.assertEqual(len(tree.subfolders), 1)
+            name, child = tree.subfolders[0]
+            self.assertEqual(name, "tools")
+            self.assertEqual([s.label for s in child.scripts], ["Run"])
+            self.assertEqual(child.subfolders, [])
+
+    def test_normal_folders_and_scripts_still_discovered(self):
+        with tempfile.TemporaryDirectory() as root:
+            os.makedirs(os.path.join(root, "alpha"))
+            os.makedirs(os.path.join(root, "beta"))
+            _write_main_script(os.path.join(root, "alpha", "first.py"))
+            _write_main_script(os.path.join(root, "beta", "second.py"))
+            _write_main_script(os.path.join(root, "root_script.py"))
+
+            tree = build_script_tree(root)
+            names = [name for name, _ in tree.subfolders]
+            self.assertEqual(names, ["alpha", "beta"])
+            self.assertEqual(len(tree.scripts), 1)
+            self.assertEqual(tree.scripts[0].label, "Root Script")
+
+
 class TestBuildMergedScriptTree(unittest.TestCase):
     def test_valid_multi_path_merge(self):
         with tempfile.TemporaryDirectory() as root_a, tempfile.TemporaryDirectory() as root_b:
